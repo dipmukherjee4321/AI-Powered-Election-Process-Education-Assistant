@@ -8,9 +8,9 @@ if (!apiKey) {
   console.warn("Missing GEMINI_API_KEY environment variable. AI features will not work.");
 }
 
-const genAI = new GoogleGenerativeAI(apiKey || "");
+const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
 
-export const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+export const model = genAI ? genAI.getGenerativeModel({ model: "gemini-2.5-flash" }) : (null as any);
 
 export async function generateContent(prompt: string) {
   try {
