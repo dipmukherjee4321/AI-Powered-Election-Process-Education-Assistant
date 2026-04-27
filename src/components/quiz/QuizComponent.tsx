@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Loader2, CheckCircle2, XCircle, RefreshCw } from "lucide-react";
 import { db, auth } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { trackEvent, AnalyticsEvents } from "@/lib/analytics";
 
 type Question = {
   question: string;
@@ -52,6 +53,12 @@ export default function QuizComponent() {
       if (!res.ok) throw new Error("Failed to load");
       const data = await res.json();
       setQuestions(data.questions);
+      
+      // Track quiz start
+      trackEvent(AnalyticsEvents.QUIZ_STARTED, {
+        difficulty,
+        is_adaptive: !!previousScore
+      });
     } catch (err) {
       console.error("Quiz Error:", err);
       // Hard fallback if the API fails entirely (e.g. network failure)
@@ -91,6 +98,15 @@ export default function QuizComponent() {
       setIsAnswered(false);
     } else {
       setIsFinished(true);
+      
+      // Track quiz completion
+      trackEvent(AnalyticsEvents.QUIZ_COMPLETED, {
+        score,
+        total: questions.length,
+        difficulty,
+        is_authenticated: !!auth.currentUser
+      });
+
       // PERSISTENCE: Save Quiz Results
       if (auth.currentUser) {
         addDoc(collection(db, "results"), {

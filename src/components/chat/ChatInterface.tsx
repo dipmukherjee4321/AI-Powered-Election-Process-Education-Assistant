@@ -6,6 +6,7 @@ import rehypeSanitize from "rehype-sanitize";
 import { Send, Bot, User, Loader2, Mic, MicOff } from "lucide-react";
 import { db, auth } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { trackEvent, AnalyticsEvents } from "@/lib/analytics";
 
 type Message = {
   id: string;
@@ -64,6 +65,13 @@ export default function ChatInterface() {
     setMessages(prev => [...prev, userMsg]);
     setInput("");
     setIsLoading(true);
+    
+    // Track user message sent
+    trackEvent(AnalyticsEvents.CHAT_MESSAGE_SENT, {
+      mode,
+      message_length: userMsg.content.length,
+      is_authenticated: !!auth.currentUser
+    });
 
     try {
       // PERSISTENCE: Save User Message
