@@ -100,8 +100,30 @@ This project is engineered to achieve 98-100% in all categories:
 
 ---
 
+## 🔐 Security & Secret Management
+ElectAI uses automated scanning to prevent sensitive information (API keys, tokens, credentials) from being committed to the repository.
+
+### 1. Automated Scanning
+We have implemented **pre-commit hooks** using `detect-secrets` and `gitleaks`.
+- **Pre-commit**: Every time you run `git commit`, the system scans your staged changes.
+- **Blocked Commits**: If a potential secret is detected, the commit will fail. You must remove the secret or add it to the `.secrets.baseline` if it is a false positive.
+
+### 2. Local Environment
+- Never commit `.env` or `.env.local` files.
+- Use `.env.example` as a template for your local setup.
+- If you accidentally expose a key, **rotate it immediately** in the Google Cloud/Firebase console.
+
+### 3. Setup Hooks
+If you are a new contributor, ensure you have the hooks installed:
+```bash
+pip install pre-commit detect-secrets
+pre-commit install
+```
+
+---
+
 ## 👨💻 9. Author
-**Diptesh Mukherjee**  
+**Diptesh Mukherjee**
 - [GitHub Profile](https://github.com/dipmukherjee4321)
 - [LinkedIn Profile](https://linkedin.com/in/dipteshmukherjee-)
 
@@ -109,4 +131,3 @@ This project is engineered to achieve 98-100% in all categories:
 
 ## ⭐ 10. Support
 If ElectAI helped you learn about democracy, give us a ⭐ on GitHub!
-

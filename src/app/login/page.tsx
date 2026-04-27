@@ -53,6 +53,11 @@ export default function LoginPage() {
   }, [router]);
 
   const handleGoogleSignIn = async () => {
+    if (!auth) {
+      toast.error("Firebase authentication is not initialized. Please check your environment variables.");
+      return;
+    }
+
     setLoading(true);
     const toastId = toast.loading("Connecting to Google...");
     try {
@@ -62,7 +67,7 @@ export default function LoginPage() {
       router.push("/dashboard");
     } catch (error: any) {
       console.error("Google Auth Error:", error);
-      
+
       // Fallback for popups being blocked or internal-error in restricted environments
       if (error.code === "auth/popup-blocked" || error.code === "auth/internal-error") {
         toast.loading("Popup blocked or failed. Retrying with redirect...", { id: toastId });
@@ -80,6 +85,11 @@ export default function LoginPage() {
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!auth) {
+      toast.error("Firebase authentication is not initialized.");
+      return;
+    }
+
     if (!email.trim() || !password.trim()) {
       toast.error("Please enter both email and password.");
       return;
@@ -99,7 +109,7 @@ export default function LoginPage() {
       router.push("/dashboard");
     } catch (error: any) {
       console.error("Auth Error:", error);
-      
+
       if (error?.code === "auth/user-not-found") {
         toast.error("User not found. Please Sign Up first!", { id: toastId });
         setIsSignUp(true);
@@ -152,7 +162,7 @@ export default function LoginPage() {
         <div className="space-y-4 mb-8">
           <button
             onClick={handleGoogleSignIn}
-            disabled={loading}
+            disabled={loading || !auth}
             className="w-full flex items-center justify-center py-3 px-4 border border-surface-dark/20 rounded-xl shadow-sm text-sm font-semibold bg-white text-gray-700 hover:bg-gray-50 transition-all active:scale-[0.98] disabled:opacity-50"
           >
             <GoogleIcon />
@@ -210,7 +220,7 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            disabled={loading || !email.trim() || !password.trim()}
+            disabled={loading || !auth || !email.trim() || !password.trim()}
             className="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
           >
             {loading ? (
@@ -220,7 +230,7 @@ export default function LoginPage() {
             )}
           </button>
         </form>
-        
+
         <div className="mt-6 text-center">
           <button
             onClick={() => setIsSignUp(!isSignUp)}
