@@ -93,7 +93,8 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  // Exclude Firebase internal routes and static assets from proxy interference
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|__/).*)'],
 };
 
 

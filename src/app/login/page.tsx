@@ -37,14 +37,22 @@ export default function LoginPage() {
     setLoading(true);
     const toastId = toast.loading("Connecting to Google...");
     try {
+      // Try Popup first (Better UX)
       await signInWithPopup(auth, googleProvider);
       toast.success("Signed in with Google!", { id: toastId });
       router.push("/dashboard");
     } catch (error: any) {
       console.error("Google Auth Error:", error);
-      toast.error("Google Sign-In failed.", { id: toastId });
-    } finally {
-      setLoading(false);
+      
+      // Fallback for popups being blocked or internal-error in restricted environments
+      if (error.code === "auth/popup-blocked" || error.code === "auth/internal-error") {
+        toast.loading("Popup blocked or failed. Retrying with redirect...", { id: toastId });
+        const { signInWithRedirect } = await import("firebase/auth");
+        await signInWithRedirect(auth, googleProvider);
+      } else {
+        toast.error(`Sign-In failed: ${error.message || "Unknown error"}`, { id: toastId });
+        setLoading(false);
+      }
     }
   };
 
