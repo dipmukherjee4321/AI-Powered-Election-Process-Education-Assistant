@@ -1,0 +1,15 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /users/{userId}/{allPaths=**} {
+      // Users can only access their own storage folder
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    match /public/{allPaths=**} {
+      // Public files are read-only for everyone
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

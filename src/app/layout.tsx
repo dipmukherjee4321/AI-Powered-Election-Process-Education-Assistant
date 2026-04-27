@@ -20,6 +20,7 @@ export const metadata: Metadata = {
 };
 
 import { AuthProvider } from "@/context/AuthContext";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export default function RootLayout({
   children,
@@ -32,12 +33,17 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground transition-colors duration-300">
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-primary focus:text-white focus:rounded-lg">
+          Skip to main content
+        </a>
         <AuthProvider>
-          <Toaster position="top-center" />
-          <Navbar />
-          <main className="flex-1 container mx-auto px-4 py-8">
-            {children}
-          </main>
+          <ErrorBoundary>
+            <Toaster position="top-center" />
+            <Navbar />
+            <main id="main-content" className="flex-1 container mx-auto px-4 py-8">
+              {children}
+            </main>
+          </ErrorBoundary>
         </AuthProvider>
       </body>
     </html>

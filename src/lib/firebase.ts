@@ -1,7 +1,9 @@
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-import { getAnalytics, isSupported } from "firebase/analytics";
+import { getAnalytics, isSupported, logEvent } from "firebase/analytics";
+import { getPerformance } from "firebase/performance";
+import { getRemoteConfig } from "firebase/remote-config";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
@@ -20,7 +22,15 @@ export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 export const db = getFirestore(app);
 
-// Initialize Analytics conditionally (Client-side only)
+// Initialize Services conditionally (Client-side only)
 export const analytics = typeof window !== "undefined" ? isSupported().then(yes => yes ? getAnalytics(app) : null) : Promise.resolve(null);
+export const performance = typeof window !== "undefined" ? getPerformance(app) : null;
+export const remoteConfig = typeof window !== "undefined" ? getRemoteConfig(app) : null;
+
+// Helper to log analytics events
+export const trackEvent = async (name: string, params?: object) => {
+  const instance = await analytics;
+  if (instance) logEvent(instance, name, params);
+};
 
 export default app;
