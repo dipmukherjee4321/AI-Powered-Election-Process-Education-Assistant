@@ -22,28 +22,34 @@ function cleanRateLimitCache() {
 
 export function proxy(request: NextRequest) {
   const response = NextResponse.next();
-  
+  const host = request.headers.get('host') || '';
+  const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1');
+
   // 1. Strict Security Headers (Hardened but Auth-Compatible)
-  response.headers.set('X-XSS-Protection', '1; mode=block');
-  response.headers.set('X-Frame-Options', 'SAMEORIGIN'); // Required for Firebase Auth popups
-  response.headers.set('X-Content-Type-Options', 'nosniff');
-  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  if (!isLocalhost) {
+    response.headers.set('X-XSS-Protection', '1; mode=block');
+    response.headers.set('X-Content-Type-Options', 'nosniff');
+    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+    response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+    
+    // CSP: Comprehensive Google Auth & Firebase support for Production
+    const csp = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.firebaseapp.com https://*.googleapis.com https://apis.google.com https://accounts.google.com https://www.gstatic.com",
+      "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://accounts.google.com",
+      "frame-src 'self' https://*.firebaseapp.com https://*.firebase.com https://accounts.google.com https://apis.google.com",
+      "img-src 'self' data: https: https://*.googleusercontent.com https://*.gstatic.com",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "font-src 'self' data: https://fonts.gstatic.com",
+      "object-src 'none'",
+      "base-uri 'self'",
+    ].join('; ');
+    
+    response.headers.set('Content-Security-Policy', csp);
+    // Disable X-Frame-Options in favor of CSP frame-ancestors 'self'
+  }
   
-  // CSP: Added frame-src for Firebase Auth and clarified source domains
-  const csp = [
-    "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.firebaseapp.com https://*.googleapis.com",
-    "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com",
-    "frame-src 'self' https://*.firebaseapp.com https://*.firebase.com",
-    "img-src 'self' data: https: https://*.googleusercontent.com",
-    "style-src 'self' 'unsafe-inline'",
-    "font-src 'self' data:",
-  ].join('; ');
-  
-  response.headers.set('Content-Security-Policy', csp);
-  
-  // 2. CSRF Protection for API Mutations
+  // 2. CSRF Protection for API Mutations (Always active for security)
   if (request.method !== 'GET' && request.nextUrl.pathname.startsWith('/api/')) {
     const origin = request.headers.get('origin');
     const referer = request.headers.get('referer');
