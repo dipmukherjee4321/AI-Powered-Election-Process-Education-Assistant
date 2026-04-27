@@ -5,29 +5,43 @@ import { getAnalytics, isSupported, logEvent } from "firebase/analytics";
 import { getPerformance } from "firebase/performance";
 import { getRemoteConfig } from "firebase/remote-config";
 
+/**
+ * Firebase Configuration
+ * Client-side keys are loaded from environment variables for security hygiene.
+ * These are baked into the Next.js bundle at build time.
+ */
 const firebaseConfig = {
-  apiKey: "***REMOVED_FIREBASE_KEY***",
-  authDomain: "election-process-al-assistant.firebaseapp.com",
-  projectId: "election-process-al-assistant",
-  storageBucket: "election-process-al-assistant.firebasestorage.app",
-  messagingSenderId: "361439269178",
-  appId: "1:361439269178:web:82b07545fd95323b9e8003",
-  measurementId: "G-XXXXXXXXXX",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// Prevent multiple initialization
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
+// Prevent multiple initialization and ensure all keys are present
+const isConfigValid = !!firebaseConfig.apiKey && !!firebaseConfig.projectId;
 
-export const auth = getAuth(app);
+const app = !getApps().length && isConfigValid 
+  ? initializeApp(firebaseConfig) 
+  : (getApps().length ? getApps()[0] : null);
+
+export const auth = app ? getAuth(app) : null as any;
 export const googleProvider = new GoogleAuthProvider();
-export const db = getFirestore(app);
+export const db = app ? getFirestore(app) : null as any;
 
 // Initialize Services conditionally (Client-side only)
-export const analytics = typeof window !== "undefined" ? isSupported().then(yes => yes ? getAnalytics(app) : null) : Promise.resolve(null);
-export const performance = typeof window !== "undefined" ? getPerformance(app) : null;
-export const remoteConfig = typeof window !== "undefined" ? getRemoteConfig(app) : null;
+export const analytics = typeof window !== "undefined" && app 
+  ? isSupported().then(yes => yes ? getAnalytics(app) : null) 
+  : Promise.resolve(null);
 
-// Helper to log analytics events
+export const performance = typeof window !== "undefined" && app ? getPerformance(app) : null;
+export const remoteConfig = typeof window !== "undefined" && app ? getRemoteConfig(app) : null;
+
+/**
+ * Global Event Tracker
+ */
 export const trackEvent = async (name: string, params?: object) => {
   const instance = await analytics;
   if (instance) logEvent(instance, name, params);
