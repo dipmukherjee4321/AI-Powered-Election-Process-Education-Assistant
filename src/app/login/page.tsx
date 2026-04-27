@@ -23,14 +23,33 @@ export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false);
 
   useEffect(() => {
+    // 🕒 Safety Timeout: If Firebase takes >3s to check auth, show the form anyway
+    const safetyTimeout = setTimeout(() => {
+      setCheckingAuth(false);
+    }, 3000);
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
+        clearTimeout(safetyTimeout);
         router.replace("/dashboard");
       } else {
+        clearTimeout(safetyTimeout);
         setCheckingAuth(false);
       }
     });
-    return () => unsubscribe();
+
+    // 🔄 Handle Redirect Result if coming back from Google
+    import("firebase/auth").then(({ getRedirectResult }) => {
+      getRedirectResult(auth).catch((err) => {
+        console.error("Redirect Result Error:", err);
+        setCheckingAuth(false);
+      });
+    });
+
+    return () => {
+      unsubscribe();
+      clearTimeout(safetyTimeout);
+    };
   }, [router]);
 
   const handleGoogleSignIn = async () => {

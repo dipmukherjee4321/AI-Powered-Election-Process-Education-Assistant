@@ -35,14 +35,16 @@ export function proxy(request: NextRequest) {
     // CSP: Comprehensive Google Auth & Firebase support for Production
     const csp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.firebaseapp.com https://*.googleapis.com https://apis.google.com https://accounts.google.com https://www.gstatic.com",
-      "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://accounts.google.com",
-      "frame-src 'self' https://*.firebaseapp.com https://*.firebase.com https://accounts.google.com https://apis.google.com",
-      "img-src 'self' data: https: https://*.googleusercontent.com https://*.gstatic.com",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.firebaseapp.com https://*.googleapis.com https://apis.google.com https://accounts.google.com https://www.gstatic.com https://www.google-analytics.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-      "font-src 'self' data: https://fonts.gstatic.com",
-      "object-src 'none'",
+      "img-src 'self' data: https: https://*.googleusercontent.com",
+      "font-src 'self' https://fonts.gstatic.com",
+      "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://accounts.google.com https://www.google-analytics.com",
+      "frame-src 'self' https://*.firebaseapp.com https://*.firebase.com https://accounts.google.com https://apis.google.com https://*.googleapis.com",
       "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'self' https://*.firebaseapp.com",
+      "upgrade-insecure-requests",
     ].join('; ');
     
     response.headers.set('Content-Security-Policy', csp);
