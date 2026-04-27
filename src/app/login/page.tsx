@@ -49,6 +49,9 @@ export default function LoginPage() {
         toast.loading("Popup blocked or failed. Retrying with redirect...", { id: toastId });
         const { signInWithRedirect } = await import("firebase/auth");
         await signInWithRedirect(auth, googleProvider);
+      } else if (error.code === "auth/operation-not-allowed") {
+        toast.error("Google Sign-In is disabled. Enable it in Firebase Console > Build > Authentication > Sign-in method.", { id: toastId, duration: 6000 });
+        setLoading(false);
       } else {
         toast.error(`Sign-In failed: ${error.message || "Unknown error"}`, { id: toastId });
         setLoading(false);
@@ -88,6 +91,8 @@ export default function LoginPage() {
         toast.error("Password should be at least 6 characters.", { id: toastId });
       } else if (error?.code === "auth/wrong-password" || error?.code === "auth/invalid-credential") {
         toast.error("Invalid email or password.", { id: toastId });
+      } else if (error?.code === "auth/operation-not-allowed") {
+        toast.error("Google Sign-In is not enabled. Please enable it in the Firebase Console.", { id: toastId, duration: 5000 });
       } else {
         toast.error(error.message || "Authentication failed. Please try again.", { id: toastId });
       }
