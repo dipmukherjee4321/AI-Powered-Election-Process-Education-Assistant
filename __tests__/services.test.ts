@@ -29,6 +29,7 @@ describe('AI Service', () => {
 describe('Storage Service', () => {
   it('should define core methods', () => {
     expect(storageService.saveQuizResult).toBeDefined();
-    expect(storageService.getUserHistory).toBeDefined();
+    expect(storageService.saveChatSession).toBeDefined();
+    expect(storageService.syncUserProfile).toBeDefined();
   });
 });
