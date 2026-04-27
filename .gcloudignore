@@ -1,0 +1,16 @@
+.gcloudignore
+.git
+.gitignore
+node_modules
+.next
+.vscode
+*.md
+LICENSE
+.firebaserc
+firebase.json
+firestore.rules
+__tests__
+vitest.config.ts
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

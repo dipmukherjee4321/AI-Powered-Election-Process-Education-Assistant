@@ -23,13 +23,25 @@ function cleanRateLimitCache() {
 export function proxy(request: NextRequest) {
   const response = NextResponse.next();
   
-  // 1. Strict Security Headers
+  // 1. Strict Security Headers (Hardened but Auth-Compatible)
   response.headers.set('X-XSS-Protection', '1; mode=block');
-  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('X-Frame-Options', 'SAMEORIGIN'); // Required for Firebase Auth popups
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
-  response.headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.firebaseapp.com https://*.googleapis.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; font-src 'self' data:;");
+  
+  // CSP: Added frame-src for Firebase Auth and clarified source domains
+  const csp = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.firebaseapp.com https://*.googleapis.com",
+    "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com",
+    "frame-src 'self' https://*.firebaseapp.com https://*.firebase.com",
+    "img-src 'self' data: https: https://*.googleusercontent.com",
+    "style-src 'self' 'unsafe-inline'",
+    "font-src 'self' data:",
+  ].join('; ');
+  
+  response.headers.set('Content-Security-Policy', csp);
   
   // 2. CSRF Protection for API Mutations
   if (request.method !== 'GET' && request.nextUrl.pathname.startsWith('/api/')) {
