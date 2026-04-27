@@ -8,22 +8,13 @@ if (!apiKey) {
   console.warn("Missing GEMINI_API_KEY environment variable. AI features will not work.");
 }
 
-const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
+const genAI = new GoogleGenerativeAI(apiKey || "");
 
-export const model = genAI ? genAI.getGenerativeModel({ model: "gemini-2.5-flash" }) : (null as any);
+export const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-export async function generateContent(prompt: string, history: any[] = []) {
+export async function generateContent(prompt: string) {
   try {
-    if (!model) throw new Error("AI core not initialized.");
-    
-    // Memory Management: Keep only the last 10 messages for context stability
-    const contextHistory = (history || []).slice(-10);
-    
-    const result = await model.generateContent([
-      ...contextHistory.map(h => `${h.role}: ${h.content}`),
-      `User: ${prompt}`
-    ].join("\n"));
-    
+    const result = await model.generateContent(prompt);
     const response = await result.response;
     return response.text();
   } catch (error) {

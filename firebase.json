@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "public",
+    "public": "out",
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -9,11 +9,22 @@
     "rewrites": [
       {
         "source": "**",
-        "run": {
-          "serviceId": "election-assistant",
-          "region": "us-central1"
-        }
+        "destination": "/index.html"
+      }
+    ],
+    "headers": [
+      {
+        "source": "**/*.@(js|css|json|png|jpg|jpeg|svg|webp|ico)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "max-age=31536000"
+          }
+        ]
       }
     ]
+  },
+  "firestore": {
+    "rules": "firestore.rules"
   }
 }

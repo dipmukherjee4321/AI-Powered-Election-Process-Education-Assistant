@@ -1,21 +1,27 @@
 "use client";
 
-import { useAuth } from "@/hooks/useAuth";
-import { auth, googleProvider } from "@/lib/firebase";
-import { signInWithPopup } from "firebase/auth";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 import { LogIn, LogOut, Loader2 } from "lucide-react";
-import toast from "react-hot-toast";
+import { auth } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
 
 export default function AuthButton() {
-  const { user, loading, logout } = useAuth();
+  const router = useRouter();
+  const { user, loading, profile } = useAuth();
 
-  const handleGoogleSignIn = async () => {
+  const handleSignInClick = () => {
+    router.push("/login");
+  };
+
+  const handleSignOut = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
-      toast.success("Signed in successfully!");
-    } catch (error: any) {
-      console.error("Auth error:", error);
-      toast.error(error.message || "Failed to sign in");
+      localStorage.removeItem("demo_session");
+      await signOut(auth);
+      router.push("/login");
+    } catch (error) {
+      console.error("Sign out error:", error);
     }
   };
 
@@ -26,18 +32,23 @@ export default function AuthButton() {
   if (user) {
     return (
       <div className="flex items-center gap-3">
+        <div className="hidden md:flex flex-col items-end">
+          <span className="text-sm font-bold truncate max-w-[120px]">{profile?.displayName || user.email?.split("@")[0]}</span>
+          <span className="text-[10px] text-foreground/50 uppercase tracking-wider font-bold">Learner</span>
+        </div>
         {user.photoURL ? (
-          <img src={user.photoURL} alt="Profile" className="w-8 h-8 rounded-full border border-surface-dark/20" />
+          <img src={user.photoURL} alt="Profile" className="w-9 h-9 rounded-full border-2 border-primary/20 p-0.5 shadow-sm" />
         ) : (
-          <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs">
+          <div className="w-9 h-9 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold border-2 border-primary/10 shadow-sm">
             {user.email?.charAt(0).toUpperCase() || "U"}
           </div>
         )}
         <button
-          onClick={logout}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-surface hover:bg-surface-dark/5 rounded-lg border border-surface-dark/10 transition-all hover:border-red-500/30 hover:text-red-500"
+          onClick={handleSignOut}
+          className="flex items-center justify-center h-9 w-9 md:w-auto md:px-3 text-sm font-medium bg-surface hover:bg-surface-dark/5 rounded-lg border border-surface-dark/10 transition-colors"
+          title="Sign Out"
         >
-          <LogOut size={16} /> <span className="hidden sm:inline">Sign Out</span>
+          <LogOut size={16} /> <span className="hidden md:inline ml-2">Sign Out</span>
         </button>
       </div>
     );
@@ -45,11 +56,10 @@ export default function AuthButton() {
 
   return (
     <button
-      onClick={handleGoogleSignIn}
-      className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-white text-gray-900 hover:bg-gray-50 border border-gray-300 rounded-lg shadow-sm transition-all hover:scale-105"
+      onClick={handleSignInClick}
+      className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-white hover:bg-primary-dark rounded-lg shadow-sm transition-colors"
     >
-      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-4 h-4" />
-      Sign In
+      <LogIn size={16} /> Sign In
     </button>
   );
 }

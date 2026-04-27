@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateContent } from "@/lib/gemini";
+import { model } from "@/lib/gemini";
 import { z } from "zod";
 
 const chatRequestSchema = z.object({
@@ -11,15 +11,23 @@ const chatRequestSchema = z.object({
 });
 
 const getSystemPrompt = (mode: string) => {
-  const base = "You are an AI Election Process Education Assistant. Your goal is to help users understand elections securely and accurately. Do not output HTML, only plain text or markdown. ";
+  const base = `You are the ElectAI Assistant, a neutral and authoritative expert on democratic election processes. 
+  CRITICAL RULES:
+  1. NEUTRALITY: Never discuss specific political parties, current candidates, or partisan politics.
+  2. GROUNDING: Only provide information based on general democratic principles and official election procedures.
+  3. FORMATTING: Use Markdown (bolding, lists) for readability. Avoid raw HTML.
+  
+  CURRENT MODE: ${mode.toUpperCase()}
+  `;
+  
   switch (mode) {
     case "simple":
-      return base + "Explain concepts very simply, as if to a 10-year-old. Use analogies. Keep it brief.";
+      return base + "TASK: Explain concepts to a 10-year-old. Use common analogies (e.g., choosing a class representative). Be encouraging and very brief.";
     case "exam":
-      return base + "Act as an exam tutor. Provide short, concise answers structured with bullet points. Highlight key terms.";
+      return base + "TASK: Act as a strict exam tutor. Focus on definitions, legal requirements (like voting age), and sequence of events. Use concise bullet points.";
     case "detailed":
     default:
-      return base + "Provide a comprehensive and detailed explanation. Cover historical context, steps, and nuances if applicable.";
+      return base + "TASK: Provide a deep-dive academic explanation. Include historical evolution of voting rights, the role of independent commissions, and technical safeguards.";
   }
 };
 
@@ -40,15 +48,17 @@ export async function POST(req: NextRequest) {
     const { messages, mode } = parsed.data;
     const systemInstruction = getSystemPrompt(mode);
     
-    const userPrompt = messages[messages.length - 1].content;
-    const history = messages.slice(0, -1);
+    const conversation = messages.map(m => `${m.role === 'user' ? 'User' : 'AI'}: ${m.content}`).join("\n");
+    const fullPrompt = `${systemInstruction}\n\nConversation History:\n${conversation}\nAI:`;
 
+    // 2. Generation with hardened fallback
     try {
-      const response = await generateContent(`${systemInstruction}\n\nUser Question: ${userPrompt}`, history);
+      const result = await model.generateContent(fullPrompt);
+      const text = result.response.text();
       
-      if (!response) throw new Error("AI returned an empty response.");
+      if (!text) throw new Error("AI returned an empty response.");
 
-      return NextResponse.json({ response });
+      return NextResponse.json({ response: text });
     } catch (apiError: any) {
       console.error("Gemini API Error:", apiError.message);
       return NextResponse.json({ 
@@ -63,3 +73,4 @@ export async function POST(req: NextRequest) {
     }, { status: 500 });
   }
 }
+

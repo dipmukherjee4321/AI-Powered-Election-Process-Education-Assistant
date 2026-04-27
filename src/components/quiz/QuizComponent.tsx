@@ -1,123 +1,41 @@
 "use client";
 
-import { useState } from "react";
-import { Loader2, CheckCircle2, XCircle, RefreshCw } from "lucide-react";
-import { db, auth } from "@/lib/firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { trackEvent, AnalyticsEvents } from "@/lib/analytics";
-
-type Question = {
-  question: string;
-  options: string[];
-  correctAnswer: string;
-  explanation: string;
-};
-
-type Difficulty = "easy" | "medium" | "hard";
+import { useState, useCallback } from "react";
+import { Loader2, RefreshCw } from "lucide-react";
+import { useQuiz, Difficulty } from "@/hooks/useQuiz";
+import QuizCard from "./QuizCard";
 
 export default function QuizComponent() {
-  const [difficulty, setDifficulty] = useState<Difficulty>("easy");
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [currentIdx, setCurrentIdx] = useState(0);
+  const {
+    questions,
+    currentIdx,
+    score,
+    isLoading,
+    isFinished,
+    difficulty,
+    setDifficulty,
+    startQuiz,
+    submitAnswer,
+    nextQuestion,
+    resetQuiz
+  } = useQuiz();
+
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
-  const [score, setScore] = useState(0);
-  const [isFinished, setIsFinished] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  const startQuiz = async () => {
-    setIsLoading(true);
-    setError("");
-    setQuestions([]);
-    setCurrentIdx(0);
-    
-    // Save previous score for adaptation before resetting
-    const previousScore = isFinished ? score : undefined;
-    const previousDifficulty = isFinished ? difficulty : undefined;
-    
-    setScore(0);
-    setIsFinished(false);
-    setSelectedOption(null);
-    setIsAnswered(false);
+  const handleStart = () => startQuiz();
 
-    try {
-      const res = await fetch("/api/quiz", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          difficulty,
-          ...(previousScore !== undefined && { previousScore, previousDifficulty })
-        })
-      });
-      if (!res.ok) throw new Error("Failed to load");
-      const data = await res.json();
-      setQuestions(data.questions);
-      
-      // Track quiz start
-      trackEvent(AnalyticsEvents.QUIZ_STARTED, {
-        difficulty,
-        is_adaptive: !!previousScore
-      });
-    } catch (err) {
-      console.error("Quiz Error:", err);
-      // Hard fallback if the API fails entirely (e.g. network failure)
-      const mockQuestions = [
-        {
-          question: "(Offline Mock) What is the primary purpose of a democratic election?",
-          options: ["To choose leaders by popular vote", "To pass laws directly", "To appoint judges", "To collect taxes"],
-          correctAnswer: "To choose leaders by popular vote",
-          explanation: "(Mock Mode) Elections allow citizens to choose their representatives."
-        },
-        {
-          question: "(Offline Mock) At what age can citizens generally vote in most democracies?",
-          options: ["16", "18", "21", "25"],
-          correctAnswer: "18",
-          explanation: "(Mock Mode) 18 is the standard voting age in most democratic nations."
-        }
-      ];
-      setQuestions(mockQuestions);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSelect = (opt: string) => {
+  const handleSelect = useCallback((opt: string) => {
     if (isAnswered) return;
     setSelectedOption(opt);
     setIsAnswered(true);
-    if (opt === questions[currentIdx].correctAnswer) {
-      setScore(s => s + 1);
-    }
-  };
+    submitAnswer(opt);
+  }, [isAnswered, submitAnswer]);
 
   const handleNext = () => {
-    if (currentIdx < questions.length - 1) {
-      setCurrentIdx(i => i + 1);
-      setSelectedOption(null);
-      setIsAnswered(false);
-    } else {
-      setIsFinished(true);
-      
-      // Track quiz completion
-      trackEvent(AnalyticsEvents.QUIZ_COMPLETED, {
-        score,
-        total: questions.length,
-        difficulty,
-        is_authenticated: !!auth.currentUser
-      });
-
-      // PERSISTENCE: Save Quiz Results
-      if (auth.currentUser) {
-        addDoc(collection(db, "results"), {
-          userId: auth.currentUser.uid,
-          score: score,
-          total: questions.length,
-          difficulty,
-          timestamp: serverTimestamp()
-        }).catch(e => console.warn("Firestore error:", e));
-      }
-    }
+    nextQuestion();
+    setSelectedOption(null);
+    setIsAnswered(false);
   };
 
   if (isLoading) {
@@ -149,10 +67,8 @@ export default function QuizComponent() {
           ))}
         </div>
         
-        {error && <p className="text-red-500 text-sm">{error}</p>}
-        
         <button
-          onClick={startQuiz}
+          onClick={handleStart}
           className="w-full py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-dark transition-colors"
         >
           Generate & Start Quiz
@@ -178,7 +94,7 @@ export default function QuizComponent() {
              "Good effort! Review the Learn module to improve your score."}
           </p>
           <button
-            onClick={() => setQuestions([])}
+            onClick={resetQuiz}
             className="flex items-center justify-center w-full py-3 bg-surface border border-surface-dark/10 rounded-xl font-medium hover:bg-surface-dark/5 transition-colors"
           >
             <RefreshCw className="mr-2 h-5 w-5" /> Try Another Quiz
@@ -187,8 +103,6 @@ export default function QuizComponent() {
       </div>
     );
   }
-
-  const currentQ = questions[currentIdx];
 
   return (
     <div className="glass rounded-2xl p-6 md:p-10 max-w-3xl mx-auto relative overflow-hidden">
@@ -206,46 +120,14 @@ export default function QuizComponent() {
         </div>
       </div>
 
-      {/* Question */}
-      <h3 className="text-2xl font-bold mb-6 leading-relaxed">{currentQ.question}</h3>
+      <QuizCard 
+        question={questions[currentIdx]}
+        selectedOption={selectedOption}
+        isAnswered={isAnswered}
+        onSelect={handleSelect}
+      />
 
-      {/* Options */}
-      <div className="space-y-3 mb-8">
-        {currentQ.options.map((opt, idx) => {
-          let stateClass = "bg-surface hover:border-primary/50 cursor-pointer border-transparent";
-          if (isAnswered) {
-            if (opt === currentQ.correctAnswer) {
-              stateClass = "bg-green-500/10 border-green-500 text-green-700 dark:text-green-400";
-            } else if (opt === selectedOption) {
-              stateClass = "bg-red-500/10 border-red-500 text-red-700 dark:text-red-400";
-            } else {
-              stateClass = "bg-surface opacity-50 cursor-not-allowed border-transparent";
-            }
-          }
-
-          return (
-            <div
-              key={idx}
-              onClick={() => handleSelect(opt)}
-              className={`p-4 rounded-xl border-2 transition-all flex justify-between items-center ${stateClass}`}
-            >
-              <span className="font-medium">{opt}</span>
-              {isAnswered && opt === currentQ.correctAnswer && <CheckCircle2 className="text-green-500 h-5 w-5" />}
-              {isAnswered && opt === selectedOption && opt !== currentQ.correctAnswer && <XCircle className="text-red-500 h-5 w-5" />}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Explanation & Next */}
-      {isAnswered && (
-        <div className="bg-primary/5 border border-primary/20 rounded-xl p-5 mb-6 animate-in slide-in-from-bottom-2 fade-in">
-          <h4 className="font-semibold text-primary mb-1">Explanation:</h4>
-          <p className="text-foreground/80">{currentQ.explanation}</p>
-        </div>
-      )}
-
-      <div className="flex justify-end">
+      <div className="flex justify-end mt-8">
         <button
           onClick={handleNext}
           disabled={!isAnswered}
@@ -258,7 +140,6 @@ export default function QuizComponent() {
   );
 }
 
-// Extracted SVG to avoid lucide-react missing icon issue if not present
 function TrophyIcon(props: any) {
   return (
     <svg

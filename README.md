@@ -9,9 +9,7 @@
 ---
 
 ## 📸 2. Preview Section
-<p align="center">
-  <img src="Image.jpeg" width="600"/>
-</p>
+![ElectAI Dashboard Preview](https://via.placeholder.com/1200x600/0f172a/3b82f6?text=ElectAI+Interactive+Dashboard+Preview)
 > **UI Highlights**: Sleek Dark Mode, Glassmorphism Components, Real-time Data Visualization, and Interactive AI Chatbot.
 
 ---
@@ -115,7 +113,7 @@ graph TD
 ## 🚀 14. Installation & Setup
 ```bash
 # 1. Clone the repository
-git clone https://github.com/dipmukherjee4321/AI-Powered-Election-Process-Education-Assistant.git
+git clone https://github.com/diptesh-xyz/elect-ai.git
 
 # 2. Install dependencies
 npm install
@@ -162,7 +160,8 @@ This project is engineered to exceed hackathon standards:
 ## 👨💻 18. Author
 **Diptesh Mukherjee**  
 - [GitHub Profile](https://github.com/dipmukherjee4321)
-- [LinkedIn Profile](https://linkedin.com/in/dipteshmukherjee-)
+- [LinkedIn](https://linkedin.com/in/dipteshmukherjee-
+)
 
 ---
 

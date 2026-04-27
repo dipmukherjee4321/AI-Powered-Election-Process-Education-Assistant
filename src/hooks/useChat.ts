@@ -1,57 +1,70 @@
+/**
+ * useChat Hook
+ * Manages chat state, AI streaming simulation, and persistence logic.
+ */
+
 import { useState, useCallback } from "react";
-import { AIService, DatabaseService } from "@/services";
-import { trackEvent, AnalyticsEvents } from "@/lib/analytics";
+import { aiService, ChatMode, ChatMessage } from "@/services/ai.service";
+import { storageService } from "@/services/storage.service";
+import { useAuth } from "@/context/AuthContext";
+import toast from "react-hot-toast";
 
-export type Message = {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-};
-
-export function useChat(initialMessages: Message[] = []) {
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+export const useChat = () => {
+  const { user } = useAuth();
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    { role: "assistant", content: "Hello! I am your AI Election Assistant. Ask me anything about how elections work!" }
+  ]);
   const [isLoading, setIsLoading] = useState(false);
+  const [mode, setMode] = useState<ChatMode>("detailed");
 
-  const sendMessage = useCallback(async (content: string, mode: string) => {
+  const sendMessage = useCallback(async (content: string) => {
     if (!content.trim() || isLoading) return;
 
-    const userMsg: Message = { id: Date.now().toString(), role: "user", content: content.trim() };
+    const userMsg: ChatMessage = { role: "user", content: content.trim() };
     setMessages(prev => [...prev, userMsg]);
     setIsLoading(true);
 
-    // Background track & persist
-    trackEvent(AnalyticsEvents.CHAT_MESSAGE_SENT, { mode, length: content.length });
-    DatabaseService.saveChat(content, "user", mode).catch(console.warn);
-
     try {
-      const data = await AIService.sendChatMessage([...messages, userMsg], mode);
-      const aiResponse = data.response;
+      const aiResponse = await aiService.fetchChatResponse([...messages, userMsg], mode);
       
-      const aiMsgId = (Date.now() + 1).toString();
-      setMessages(prev => [...prev, { id: aiMsgId, role: "assistant", content: "" }]);
+      // ⚡ Typewriter Effect Simulation
+      const aiMsgId = Date.now().toString();
+      const words = aiResponse.split(" ");
+      let currentText = "";
+
+      // Initial empty response entry
+      setMessages(prev => [...prev, { role: "assistant", content: "" }]);
       setIsLoading(false);
 
-      // Simulate typing effect
-      let currentText = "";
-      const words = aiResponse.split(" ");
       for (let i = 0; i < words.length; i++) {
         currentText += (i === 0 ? "" : " ") + words[i];
-        const currentVal = currentText;
-        setMessages(prev => prev.map(m => m.id === aiMsgId ? { ...m, content: currentVal } : m));
-        await new Promise(r => setTimeout(r, 15 + Math.random() * 25));
+        const textToDisplay = currentText;
+        setMessages(prev => {
+          const updated = [...prev];
+          updated[updated.length - 1].content = textToDisplay;
+          return updated;
+        });
+        await new Promise(r => setTimeout(r, 15 + Math.random() * 20));
       }
 
-      DatabaseService.saveChat(aiResponse, "assistant", mode).catch(console.warn);
-    } catch (error) {
-      console.error("Chat error:", error);
-      setMessages(prev => [...prev, { 
-        id: Date.now().toString(), 
-        role: "assistant", 
-        content: "Sorry, I had trouble connecting. Please try again." 
-      }]);
+      // ☁️ Persistence
+      if (user) {
+        storageService.saveChatSession(user.uid, userMsg.content, aiResponse, mode)
+          .catch(err => console.warn("Background persistence failed:", err));
+      }
+
+    } catch (error: any) {
+      console.error("Chat hook error:", error);
+      toast.error(error.message || "Failed to get AI response");
       setIsLoading(false);
     }
-  }, [messages, isLoading]);
+  }, [messages, mode, user, isLoading]);
 
-  return { messages, isLoading, sendMessage };
-}
+  return {
+    messages,
+    isLoading,
+    mode,
+    setMode,
+    sendMessage
+  };
+};

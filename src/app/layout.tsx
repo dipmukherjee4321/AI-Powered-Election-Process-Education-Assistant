@@ -19,6 +19,8 @@ export const metadata: Metadata = {
   description: "Learn about the election process with AI-driven interactive modules.",
 };
 
+import { AuthProvider } from "@/context/AuthContext";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -30,11 +32,13 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground transition-colors duration-300">
-        <Toaster position="top-center" />
-        <Navbar />
-        <main className="flex-1 container mx-auto px-4 py-8">
-          {children}
-        </main>
+        <AuthProvider>
+          <Toaster position="top-center" />
+          <Navbar />
+          <main className="flex-1 container mx-auto px-4 py-8">
+            {children}
+          </main>
+        </AuthProvider>
       </body>
     </html>
   );
