@@ -19,6 +19,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!auth || !db) {
+      console.warn("Firebase services not available. Skipping Auth initialization.");
+      setLoading(false);
+      return;
+    }
+
     // Handle redirect result on mount
     getRedirectResult(auth).catch(err => {
       console.error("Redirect Auth Error:", err);
@@ -28,25 +34,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(user);
       
       if (user) {
-        // Synchronize profile with Firestore
-        const userRef = doc(db, "users", user.uid);
-        const userDoc = await getDoc(userRef);
-        
-        if (!userDoc.exists()) {
-          const newProfile = {
-            uid: user.uid,
-            email: user.email,
-            displayName: user.displayName,
-            photoURL: user.photoURL,
-            createdAt: serverTimestamp(),
-            lastLogin: serverTimestamp(),
-          };
-          await setDoc(userRef, newProfile);
-          setProfile(newProfile);
-        } else {
-          setProfile(userDoc.data());
-          // Update last login
-          await setDoc(userRef, { lastLogin: serverTimestamp() }, { merge: true });
+        try {
+          // Synchronize profile with Firestore
+          const userRef = doc(db, "users", user.uid);
+          const userDoc = await getDoc(userRef);
+          
+          if (!userDoc.exists()) {
+            const newProfile = {
+              uid: user.uid,
+              email: user.email,
+              displayName: user.displayName,
+              photoURL: user.photoURL,
+              createdAt: serverTimestamp(),
+              lastLogin: serverTimestamp(),
+            };
+            await setDoc(userRef, newProfile);
+            setProfile(newProfile);
+          } else {
+            setProfile(userDoc.data());
+            // Update last login
+            await setDoc(userRef, { lastLogin: serverTimestamp() }, { merge: true });
+          }
+        } catch (dbError) {
+          console.error("Firestore sync error:", dbError);
         }
       } else {
         setProfile(null);
