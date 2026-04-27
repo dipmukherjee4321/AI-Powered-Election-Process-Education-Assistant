@@ -12,9 +12,18 @@ const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
 
 export const model = genAI ? genAI.getGenerativeModel({ model: "gemini-2.5-flash" }) : (null as any);
 
-export async function generateContent(prompt: string) {
+export async function generateContent(prompt: string, history: any[] = []) {
   try {
-    const result = await model.generateContent(prompt);
+    if (!model) throw new Error("AI core not initialized.");
+    
+    // Memory Management: Keep only the last 10 messages for context stability
+    const contextHistory = (history || []).slice(-10);
+    
+    const result = await model.generateContent([
+      ...contextHistory.map(h => `${h.role}: ${h.content}`),
+      `User: ${prompt}`
+    ].join("\n"));
+    
     const response = await result.response;
     return response.text();
   } catch (error) {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { model } from "@/lib/gemini";
+import { generateContent } from "@/lib/gemini";
 import { z } from "zod";
 
 const chatRequestSchema = z.object({
@@ -40,17 +40,15 @@ export async function POST(req: NextRequest) {
     const { messages, mode } = parsed.data;
     const systemInstruction = getSystemPrompt(mode);
     
-    const conversation = messages.map(m => `${m.role === 'user' ? 'User' : 'AI'}: ${m.content}`).join("\n");
-    const fullPrompt = `${systemInstruction}\n\nConversation History:\n${conversation}\nAI:`;
+    const userPrompt = messages[messages.length - 1].content;
+    const history = messages.slice(0, -1);
 
-    // 2. Generation with hardened fallback
     try {
-      const result = await model.generateContent(fullPrompt);
-      const text = result.response.text();
+      const response = await generateContent(`${systemInstruction}\n\nUser Question: ${userPrompt}`, history);
       
-      if (!text) throw new Error("AI returned an empty response.");
+      if (!response) throw new Error("AI returned an empty response.");
 
-      return NextResponse.json({ response: text });
+      return NextResponse.json({ response });
     } catch (apiError: any) {
       console.error("Gemini API Error:", apiError.message);
       return NextResponse.json({ 
@@ -65,4 +63,3 @@ export async function POST(req: NextRequest) {
     }, { status: 500 });
   }
 }
-
