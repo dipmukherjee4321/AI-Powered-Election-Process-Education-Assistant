@@ -14,7 +14,9 @@
 ---
 
 ## 📸 1. Preview Section
-![ElectAI Dashboard Preview](https://via.placeholder.com/1200x600/0f172a/3b82f6?text=ElectAI+Interactive+Dashboard+Preview)
+<p align="center">
+  <img src="" width="600"/>
+</p>
 > **UI Highlights**: Sleek Dark Mode, Glassmorphism Components, Real-time Data Visualization, and Interactive AI Chatbot.
 
 ---
