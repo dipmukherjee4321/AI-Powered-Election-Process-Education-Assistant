@@ -15,7 +15,7 @@
 
 ## 📸 1. Preview Section
 <p align="center">
-  <img src="" width="600"/>
+  <img src="Image.jpeg" width="600"/>
 </p>
 > **UI Highlights**: Sleek Dark Mode, Glassmorphism Components, Real-time Data Visualization, and Interactive AI Chatbot.
 
