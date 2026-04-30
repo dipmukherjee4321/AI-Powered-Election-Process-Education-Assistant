@@ -3,9 +3,11 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const apiKey = process.env.GEMINI_API_KEY;
 
 if (!apiKey) {
-  // We log a warning instead of throwing to avoid breaking the build immediately 
+  // We log a warning instead of throwing to avoid breaking the build immediately
   // without the key during initial development, but the API calls will fail.
-  console.warn("Missing GEMINI_API_KEY environment variable. AI features will not work.");
+  console.warn(
+    "Missing GEMINI_API_KEY environment variable. AI features will not work.",
+  );
 }
 
 const genAI = new GoogleGenerativeAI(apiKey || "");

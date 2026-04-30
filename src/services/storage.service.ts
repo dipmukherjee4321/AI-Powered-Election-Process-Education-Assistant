@@ -4,13 +4,28 @@
  */
 
 import { db } from "@/lib/firebase";
-import { collection, addDoc, serverTimestamp, doc, setDoc } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+  doc,
+  setDoc,
+} from "firebase/firestore";
 
 export const storageService = {
   /**
    * Saves a chat interaction to the user's personal history
    */
-  async saveChatSession(userId: string, userMessage: string, aiResponse: string, mode: string) {
+  async saveChatSession(
+    userId: string,
+    userMessage: string,
+    aiResponse: string,
+    mode: string,
+  ) {
+    if (!db) {
+      console.warn("Storage skipped: Firestore not initialized.");
+      return;
+    }
     const chatRef = collection(db, "users", userId, "chat_history");
     return addDoc(chatRef, {
       userMessage,
@@ -23,12 +38,16 @@ export const storageService = {
   /**
    * Saves a quiz result with performance metrics
    */
-  async saveQuizResult(userId: string, result: {
-    score: number;
-    total: number;
-    difficulty: string;
-    accuracy: number;
-  }) {
+  async saveQuizResult(
+    userId: string,
+    result: {
+      score: number;
+      total: number;
+      difficulty: string;
+      accuracy: number;
+    },
+  ) {
+    if (!db) return;
     const resultsRef = collection(db, "users", userId, "quiz_results");
     return addDoc(resultsRef, {
       ...result,
@@ -39,11 +58,16 @@ export const storageService = {
   /**
    * Updates or creates a user profile
    */
-  async syncUserProfile(userId: string, profile: any) {
+  async syncUserProfile(userId: string, profile: Record<string, unknown>) {
+    if (!db) return;
     const userRef = doc(db, "users", userId);
-    return setDoc(userRef, {
-      ...profile,
-      lastActive: serverTimestamp(),
-    }, { merge: true });
-  }
+    return setDoc(
+      userRef,
+      {
+        ...profile,
+        lastActive: serverTimestamp(),
+      },
+      { merge: true },
+    );
+  },
 };

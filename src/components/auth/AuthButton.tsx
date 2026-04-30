@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { LogIn, LogOut, Loader2 } from "lucide-react";
@@ -33,11 +33,21 @@ export default function AuthButton() {
     return (
       <div className="flex items-center gap-3">
         <div className="hidden md:flex flex-col items-end">
-          <span className="text-sm font-bold truncate max-w-[120px]">{profile?.displayName || user.email?.split("@")[0]}</span>
-          <span className="text-[10px] text-foreground/50 uppercase tracking-wider font-bold">Learner</span>
+          <span className="text-sm font-bold truncate max-w-[120px]">
+            {(profile?.displayName as string) || user.email?.split("@")[0]}
+          </span>
+          <span className="text-[10px] text-foreground/50 uppercase tracking-wider font-bold">
+            Learner
+          </span>
         </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         {user.photoURL ? (
-          <img src={user.photoURL} alt="Profile" className="w-9 h-9 rounded-full border-2 border-primary/20 p-0.5 shadow-sm" />
+          <img
+            src={user.photoURL}
+            alt=""
+            aria-hidden="true"
+            className="w-9 h-9 rounded-full border-2 border-primary/20 p-0.5 shadow-sm"
+          />
         ) : (
           <div className="w-9 h-9 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold border-2 border-primary/10 shadow-sm">
             {user.email?.charAt(0).toUpperCase() || "U"}
@@ -45,10 +55,12 @@ export default function AuthButton() {
         )}
         <button
           onClick={handleSignOut}
-          className="flex items-center justify-center h-9 w-9 md:w-auto md:px-3 text-sm font-medium bg-surface hover:bg-surface-dark/5 rounded-lg border border-surface-dark/10 transition-colors"
+          className="flex items-center justify-center h-9 w-9 md:w-auto md:px-3 text-sm font-medium bg-surface hover:bg-surface-dark/5 rounded-lg border border-surface-dark/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           title="Sign Out"
+          aria-label="Sign Out"
         >
-          <LogOut size={16} /> <span className="hidden md:inline ml-2">Sign Out</span>
+          <LogOut size={16} />{" "}
+          <span className="hidden md:inline ml-2">Sign Out</span>
         </button>
       </div>
     );
@@ -57,7 +69,7 @@ export default function AuthButton() {
   return (
     <button
       onClick={handleSignInClick}
-      className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-white hover:bg-primary-dark rounded-lg shadow-sm transition-colors"
+      className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-white hover:bg-primary-dark rounded-lg shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
     >
       <LogIn size={16} /> Sign In
     </button>

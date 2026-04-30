@@ -8,37 +8,43 @@ import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  profile: any;
+  profile: Record<string, unknown> | null;
 }
 
-const AuthContext = createContext<AuthContextType>({ user: null, loading: true, profile: null });
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  loading: true,
+  profile: null,
+});
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!auth || !db) {
-      console.warn("Firebase services not available. Skipping Auth initialization.");
-      setLoading(false);
+      console.warn(
+        "Firebase services not available. Skipping Auth initialization.",
+      );
+      setTimeout(() => setLoading(false), 0);
       return;
     }
 
     // Handle redirect result on mount
-    getRedirectResult(auth).catch(err => {
+    getRedirectResult(auth).catch((err) => {
       console.error("Redirect Auth Error:", err);
     });
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
-      
+
       if (user) {
         try {
           // Synchronize profile with Firestore
           const userRef = doc(db, "users", user.uid);
           const userDoc = await getDoc(userRef);
-          
+
           if (!userDoc.exists()) {
             const newProfile = {
               uid: user.uid,
@@ -53,7 +59,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           } else {
             setProfile(userDoc.data());
             // Update last login
-            await setDoc(userRef, { lastLogin: serverTimestamp() }, { merge: true });
+            await setDoc(
+              userRef,
+              { lastLogin: serverTimestamp() },
+              { merge: true },
+            );
           }
         } catch (dbError) {
           console.error("Firestore sync error:", dbError);
@@ -61,7 +71,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } else {
         setProfile(null);
       }
-      
+
       setLoading(false);
     });
 

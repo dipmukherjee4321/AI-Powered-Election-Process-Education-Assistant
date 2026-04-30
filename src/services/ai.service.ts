@@ -4,18 +4,16 @@
  * Decouples business logic from UI components.
  */
 
-export interface ChatMessage {
-  role: "user" | "assistant";
-  content: string;
-}
-
-export type ChatMode = "simple" | "detailed" | "exam";
+import { ChatMessage, ChatMode } from "@/types";
 
 export const aiService = {
   /**
    * Sends a chat message to the Gemini-powered backend
    */
-  async fetchChatResponse(messages: ChatMessage[], mode: ChatMode): Promise<string> {
+  async fetchChatResponse(
+    messages: ChatMessage[],
+    mode: ChatMode,
+  ): Promise<string> {
     const response = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -34,13 +32,20 @@ export const aiService = {
   /**
    * Generates a new quiz based on difficulty and past performance
    */
-  async generateQuiz(difficulty: string, previousScore?: number, previousDifficulty?: string) {
+  async generateQuiz(
+    difficulty: string,
+    previousScore?: number,
+    previousDifficulty?: string,
+  ) {
     const response = await fetch("/api/quiz", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        difficulty, 
-        ...(previousScore !== undefined && { previousScore, previousDifficulty }) 
+      body: JSON.stringify({
+        difficulty,
+        ...(previousScore !== undefined && {
+          previousScore,
+          previousDifficulty,
+        }),
       }),
     });
 
@@ -49,5 +54,5 @@ export const aiService = {
     }
 
     return response.json();
-  }
+  },
 };

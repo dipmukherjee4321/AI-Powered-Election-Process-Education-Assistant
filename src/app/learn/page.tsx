@@ -6,10 +6,18 @@ import { Loader2 } from "lucide-react";
 import Timeline from "@/components/learning/Timeline";
 
 const ChatInterface = dynamic(() => import("@/components/chat/ChatInterface"), {
-  loading: () => <div className="flex items-center justify-center h-64"><Loader2 className="animate-spin" /></div>
+  loading: () => (
+    <div className="flex items-center justify-center h-64">
+      <Loader2 className="animate-spin" />
+    </div>
+  ),
 });
 const QuizComponent = dynamic(() => import("@/components/quiz/QuizComponent"), {
-  loading: () => <div className="flex items-center justify-center h-64"><Loader2 className="animate-spin" /></div>
+  loading: () => (
+    <div className="flex items-center justify-center h-64">
+      <Loader2 className="animate-spin" />
+    </div>
+  ),
 });
 
 export default function LearnPage() {
@@ -22,27 +30,45 @@ export default function LearnPage() {
           The Election Journey
         </h1>
         <p className="text-lg text-foreground/80">
-          Understand how an election unfolds from the initial announcement to the final declaration of results. Click on each stage to learn what happens behind the scenes.
+          Understand how an election unfolds from the initial announcement to
+          the final declaration of results. Click on each stage to learn what
+          happens behind the scenes.
         </p>
       </div>
-      
+
       <Timeline />
 
       <div className="pt-16 border-t border-surface-dark/10">
         <div className="flex justify-center mb-10">
-          <div className="inline-flex p-1 bg-surface border border-surface-dark/20 rounded-2xl shadow-inner">
+          <div
+            className="inline-flex p-1 bg-surface border border-surface-dark/20 rounded-2xl shadow-inner"
+            role="tablist"
+            aria-label="Learning Mode"
+          >
             <button
+              role="tab"
+              aria-selected={activeTab === "chat"}
+              aria-controls="panel-chat"
+              id="tab-chat"
               onClick={() => setActiveTab("chat")}
-              className={`px-8 py-3 rounded-xl font-bold transition-all ${
-                activeTab === "chat" ? "bg-primary text-white shadow-lg" : "text-foreground/60 hover:text-foreground"
+              className={`px-8 py-3 rounded-xl font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                activeTab === "chat"
+                  ? "bg-primary text-white shadow-lg"
+                  : "text-foreground/60 hover:text-foreground"
               }`}
             >
               AI Tutor
             </button>
             <button
+              role="tab"
+              aria-selected={activeTab === "quiz"}
+              aria-controls="panel-quiz"
+              id="tab-quiz"
               onClick={() => setActiveTab("quiz")}
-              className={`px-8 py-3 rounded-xl font-bold transition-all ${
-                activeTab === "quiz" ? "bg-primary text-white shadow-lg" : "text-foreground/60 hover:text-foreground"
+              className={`px-8 py-3 rounded-xl font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                activeTab === "quiz"
+                  ? "bg-primary text-white shadow-lg"
+                  : "text-foreground/60 hover:text-foreground"
               }`}
             >
               Knowledge Quiz
@@ -50,7 +76,13 @@ export default function LearnPage() {
           </div>
         </div>
 
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div
+          className="animate-in fade-in slide-in-from-bottom-4 duration-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-2xl"
+          role="tabpanel"
+          id={`panel-${activeTab}`}
+          aria-labelledby={`tab-${activeTab}`}
+          tabIndex={0}
+        >
           {activeTab === "chat" ? <ChatInterface /> : <QuizComponent />}
         </div>
       </div>

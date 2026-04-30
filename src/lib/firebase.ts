@@ -16,16 +16,24 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase (Singleton pattern)
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
+// Initialize Firebase (Singleton pattern with validation)
+const isConfigValid = !!firebaseConfig.apiKey && !!firebaseConfig.projectId;
 
-export const auth = getAuth(app);
+const app =
+  !getApps().length && isConfigValid
+    ? initializeApp(firebaseConfig)
+    : getApps().length
+      ? getApps()[0]
+      : null;
+
+export const auth = app ? getAuth(app) : (null as unknown as ReturnType<typeof getAuth>);
 export const googleProvider = new GoogleAuthProvider();
-export const db = getFirestore(app);
+export const db = app ? getFirestore(app) : (null as unknown as ReturnType<typeof getFirestore>);
 
 // Analytics (Client-side only)
-export const analytics = typeof window !== "undefined" 
-  ? isSupported().then(yes => yes ? getAnalytics(app) : null) 
-  : Promise.resolve(null);
+export const analytics =
+  typeof window !== "undefined" && app
+    ? isSupported().then((yes) => (yes ? getAnalytics(app) : null))
+    : Promise.resolve(null);
 
 export default app;

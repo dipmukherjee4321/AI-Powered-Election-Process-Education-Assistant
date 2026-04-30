@@ -5,23 +5,29 @@ import { z } from "zod";
 const quizRequestSchema = z.object({
   difficulty: z.enum(["easy", "medium", "hard"]).default("easy"),
   previousScore: z.number().optional(),
-  previousDifficulty: z.enum(["easy", "medium", "hard"]).optional()
+  previousDifficulty: z.enum(["easy", "medium", "hard"]).optional(),
 });
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    
+
     // 1. Input Validation (Security)
     const parsed = quizRequestSchema.safeParse(body);
     if (!parsed.success) {
-      console.warn("Security Alert: Invalid quiz payload received.", parsed.error.format());
-      return NextResponse.json({ 
-        error: "Invalid input.", 
-        details: parsed.error.format() 
-      }, { status: 400 });
+      console.warn(
+        "Security Alert: Invalid quiz payload received.",
+        parsed.error.format(),
+      );
+      return NextResponse.json(
+        {
+          error: "Invalid input.",
+          details: parsed.error.format(),
+        },
+        { status: 400 },
+      );
     }
-    
+
     const { difficulty, previousScore, previousDifficulty } = parsed.data;
 
     let adaptationContext = "";
@@ -33,11 +39,11 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const prompt = `Generate a 5-question multiple-choice quiz about the democratic election process. 
+    const prompt = `Generate a 5-question multiple-choice quiz about the democratic election process.
     The target baseline difficulty is: ${difficulty}.
     ${adaptationContext}
-    
-    Return a JSON array of objects. 
+
+    Return a JSON array of objects.
     Each object must have exactly:
     - "question": string
     - "options": array of exactly 4 strings
@@ -49,37 +55,50 @@ export async function POST(req: NextRequest) {
       const result = await model.generateContent({
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         generationConfig: {
-          responseMimeType: "application/json"
-        }
+          responseMimeType: "application/json",
+        },
       });
-      
+
       const text = result.response.text();
       if (!text) throw new Error("AI returned empty response.");
-      
+
       const questions = JSON.parse(text);
       return NextResponse.json({ questions });
-    } catch (apiError: any) {
-      console.error("Gemini API Error:", apiError.message);
+    } catch (apiError) {
+      console.error(
+        "Gemini API Error:",
+        apiError instanceof Error ? apiError.message : String(apiError),
+      );
       // Hardened fallback for high efficiency
-      return NextResponse.json({ 
+      return NextResponse.json({
         questions: [
           {
             question: "How are leaders typically chosen in a democracy?",
-            options: ["By hereditary succession", "By popular vote", "By military appointment", "By random selection"],
+            options: [
+              "By hereditary succession",
+              "By popular vote",
+              "By military appointment",
+              "By random selection",
+            ],
             correctAnswer: "By popular vote",
-            explanation: "In a democracy, the primary method for selecting leaders is through voting by the eligible population."
-          }
+            explanation:
+              "In a democracy, the primary method for selecting leaders is through voting by the eligible population.",
+          },
         ],
-        fallback: true
+        fallback: true,
       });
     }
-  } catch (error: any) {
-    console.error("Fatal Quiz API Error:", error);
-    return NextResponse.json({ 
-      error: "Internal Server Error", 
-      message: "An unexpected exception occurred during quiz generation." 
-    }, { status: 500 });
+  } catch (error) {
+    console.error(
+      "Fatal Quiz API Error:",
+      error instanceof Error ? error.message : String(error),
+    );
+    return NextResponse.json(
+      {
+        error: "Internal Server Error",
+        message: "An unexpected exception occurred during quiz generation.",
+      },
+      { status: 500 },
+    );
   }
 }
-
-

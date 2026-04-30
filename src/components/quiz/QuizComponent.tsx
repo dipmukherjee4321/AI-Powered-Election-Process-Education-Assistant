@@ -2,7 +2,8 @@
 
 import { useState, useCallback } from "react";
 import { Loader2, RefreshCw } from "lucide-react";
-import { useQuiz, Difficulty } from "@/hooks/useQuiz";
+import { useQuiz } from "@/hooks/useQuiz";
+import { Difficulty } from "@/types";
 import QuizCard from "./QuizCard";
 
 export default function QuizComponent() {
@@ -17,7 +18,7 @@ export default function QuizComponent() {
     startQuiz,
     submitAnswer,
     nextQuestion,
-    resetQuiz
+    resetQuiz,
   } = useQuiz();
 
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
@@ -25,12 +26,15 @@ export default function QuizComponent() {
 
   const handleStart = () => startQuiz();
 
-  const handleSelect = useCallback((opt: string) => {
-    if (isAnswered) return;
-    setSelectedOption(opt);
-    setIsAnswered(true);
-    submitAnswer(opt);
-  }, [isAnswered, submitAnswer]);
+  const handleSelect = useCallback(
+    (opt: string) => {
+      if (isAnswered) return;
+      setSelectedOption(opt);
+      setIsAnswered(true);
+      submitAnswer(opt);
+    },
+    [isAnswered, submitAnswer],
+  );
 
   const handleNext = () => {
     nextQuestion();
@@ -40,9 +44,11 @@ export default function QuizComponent() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-lg text-foreground/70">AI is generating your quiz...</p>
+      <div className="flex flex-col items-center justify-center py-20" aria-live="polite" aria-busy="true">
+        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" aria-hidden="true" />
+        <p className="text-lg text-foreground/70">
+          AI is generating your quiz...
+        </p>
       </div>
     );
   }
@@ -51,22 +57,26 @@ export default function QuizComponent() {
     return (
       <div className="glass rounded-2xl p-8 max-w-xl mx-auto text-center space-y-6">
         <h2 className="text-2xl font-bold">Ready to test your knowledge?</h2>
-        <p className="text-foreground/70">Select a difficulty level and let AI generate a unique quiz for you.</p>
-        
-        <div className="flex justify-center gap-4 py-4">
-          {(["easy", "medium", "hard"] as Difficulty[]).map(d => (
+        <p className="text-foreground/70">
+          Select a difficulty level and let AI generate a unique quiz for you.
+        </p>
+
+        <div className="flex justify-center gap-4 py-4" role="group" aria-label="Select difficulty level">
+          {(["easy", "medium", "hard"] as Difficulty[]).map((d) => (
             <button
               key={d}
               onClick={() => setDifficulty(d)}
-              className={`px-6 py-2 rounded-full capitalize font-medium transition-all ${
-                difficulty === d ? "bg-primary text-white shadow-md shadow-primary/20 scale-105" : "bg-surface text-foreground/70 hover:bg-surface-dark/5"
-              }`}
+              aria-pressed={difficulty === d}
+              className={`px-6 py-2 rounded-full capitalize font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${difficulty === d
+                  ? "bg-primary text-white shadow-md shadow-primary/20 scale-105"
+                  : "bg-surface text-foreground/70 hover:bg-surface-dark/5"
+                }`}
             >
               {d}
             </button>
           ))}
         </div>
-        
+
         <button
           onClick={handleStart}
           className="w-full py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-dark transition-colors"
@@ -79,25 +89,28 @@ export default function QuizComponent() {
 
   if (isFinished) {
     return (
-      <div className="glass rounded-2xl p-8 max-w-xl mx-auto text-center space-y-6">
-        <div className="w-24 h-24 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+      <div className="glass rounded-2xl p-8 max-w-xl mx-auto text-center space-y-6" aria-live="polite">
+        <div className="w-24 h-24 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4" aria-hidden="true">
           <TrophyIcon className="w-12 h-12" />
         </div>
         <h2 className="text-3xl font-bold">Quiz Complete!</h2>
         <p className="text-xl">
-          You scored <span className="font-bold text-primary">{score}</span> out of {questions.length}
+          You scored <span className="font-bold text-primary">{score}</span> out
+          of {questions.length}
         </p>
         <div className="pt-4 border-t border-surface-dark/10">
           <p className="text-foreground/70 mb-6">
-            {score === questions.length ? "Perfect! You're an election expert." : 
-             score > questions.length / 2 ? "Great job! Keep learning to master the process." :
-             "Good effort! Review the Learn module to improve your score."}
+            {score === questions.length
+              ? "Perfect! You're an election expert."
+              : score > questions.length / 2
+                ? "Great job! Keep learning to master the process."
+                : "Good effort! Review the Learn module to improve your score."}
           </p>
           <button
             onClick={resetQuiz}
-            className="flex items-center justify-center w-full py-3 bg-surface border border-surface-dark/10 rounded-xl font-medium hover:bg-surface-dark/5 transition-colors"
+            className="flex items-center justify-center w-full py-3 bg-surface border border-surface-dark/10 rounded-xl font-medium hover:bg-surface-dark/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
-            <RefreshCw className="mr-2 h-5 w-5" /> Try Another Quiz
+            <RefreshCw className="mr-2 h-5 w-5" aria-hidden="true" /> Try Another Quiz
           </button>
         </div>
       </div>
@@ -109,18 +122,20 @@ export default function QuizComponent() {
       {/* Progress */}
       <div className="mb-8">
         <div className="flex justify-between text-sm font-medium text-foreground/60 mb-2">
-          <span>Question {currentIdx + 1} of {questions.length}</span>
+          <span>
+            Question {currentIdx + 1} of {questions.length}
+          </span>
           <span>Score: {score}</span>
         </div>
         <div className="w-full bg-surface-dark/10 rounded-full h-2">
-          <div 
-            className="bg-primary h-2 rounded-full transition-all duration-500" 
-            style={{ width: `${((currentIdx) / questions.length) * 100}%` }}
+          <div
+            className="bg-primary h-2 rounded-full transition-all duration-500"
+            style={{ width: `${(currentIdx / questions.length) * 100}%` }}
           />
         </div>
       </div>
 
-      <QuizCard 
+      <QuizCard
         question={questions[currentIdx]}
         selectedOption={selectedOption}
         isAnswered={isAnswered}
@@ -133,14 +148,16 @@ export default function QuizComponent() {
           disabled={!isAnswered}
           className="px-8 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {currentIdx === questions.length - 1 ? "Finish Quiz" : "Next Question"}
+          {currentIdx === questions.length - 1
+            ? "Finish Quiz"
+            : "Next Question"}
         </button>
       </div>
     </div>
   );
 }
 
-function TrophyIcon(props: any) {
+function TrophyIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}
